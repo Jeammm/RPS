@@ -18,6 +18,7 @@ contract RWAPSSF is CommitReveal{
     uint public numPlayer = 0;
     uint public reward = 0;
     mapping (uint => Player) public player;
+    mapping (address => uint) public playerId;
     uint public numInput = 0;
     uint public numReveal = 0;
 
@@ -30,31 +31,32 @@ contract RWAPSSF is CommitReveal{
         player[numPlayer].joinTime = block.timestamp;
         player[numPlayer].playTime = 0;
         player[numPlayer].revealTime = 0;
+        playerId[msg.sender] = numPlayer;
         numPlayer++;
     }
 
-    function input(uint choice, uint idx, string memory salt) public  {
+    function input(uint choice, string memory salt) public  {
         //hash input with salt and then commit
         require(numPlayer == 2);
-        require(msg.sender == player[idx].addr);
+        require(msg.sender == player[playerId[msg.sender]].addr);
         require(choice >= 0 && choice <= 6); // 0 <= choice <= 6
         
         bytes32 saltHash = keccak256(abi.encodePacked(salt));
         commit(getSaltedHash(bytes32(choice), saltHash));
         
-        player[idx].playTime = block.timestamp;
+        player[playerId[msg.sender]].playTime = block.timestamp;
         numInput++;
     }
 
-    function revealMyChoice(uint choice, uint idx, string memory salt) public {
+    function revealMyChoice(uint choice, string memory salt) public {
         //reveal the answer with the given salt
         require(numInput == 2);
-        require(msg.sender == player[idx].addr);
+        require(msg.sender == player[playerId[msg.sender]].addr);
 
         bytes32 saltHash = keccak256(abi.encodePacked(salt));
         revealAnswer(bytes32(choice), saltHash);
-        player[idx].choice = choice;
-        player[idx].revealTime = block.timestamp;
+        player[playerId[msg.sender]].choice = choice;
+        player[playerId[msg.sender]].revealTime = block.timestamp;
         numReveal++;
         
         if (numReveal == 2) {
@@ -83,7 +85,8 @@ contract RWAPSSF is CommitReveal{
         reset();
     }
 
-    function withdrawn(uint idx) public {
+    function withdrawn() public {
+        uint idx = playerId[msg.sender];
         require(msg.sender == player[idx].addr);
 
         if (numPlayer == 1) {
