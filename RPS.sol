@@ -6,7 +6,12 @@ contract RPS {
     struct Player {
         uint choice; // 0 - Rock, 1 - Paper , 2 - Scissors, 3 - undefined
         address addr;
+        uint joinTime;
+        uint playTime;
     }
+
+    uint waitingTime = 10;
+
     uint public numPlayer = 0;
     uint public reward = 0;
     mapping (uint => Player) public player;
@@ -18,6 +23,8 @@ contract RPS {
         reward += msg.value;
         player[numPlayer].addr = msg.sender;
         player[numPlayer].choice = 3;
+        player[numPlayer].joinTime = block.timestamp;
+        player[numPlayer].playTime = 0;
         numPlayer++;
     }
 
@@ -26,6 +33,7 @@ contract RPS {
         require(msg.sender == player[idx].addr);
         require(choice == 0 || choice == 1 || choice == 2);
         player[idx].choice = choice;
+        player[idx].playTime = block.timestamp;
         numInput++;
         if (numInput == 2) {
             _checkWinnerAndPay();
@@ -50,5 +58,41 @@ contract RPS {
             account0.transfer(reward / 2);
             account1.transfer(reward / 2);
         }
+        reset();
+    }
+
+    function withdrawn(uint idx) public {
+        require(msg.sender == player[idx].addr);
+
+        if (numPlayer == 1) {
+            require(block.timestamp - player[idx].joinTime > waitingTime);
+            address payable account = payable(player[idx].addr);
+            account.transfer(reward);
+            reset();
+        }
+
+        uint opponent;
+        if (idx == 0) {
+            opponent = 1;
+        } else {
+            opponent = 0;
+        }
+
+        if (numPlayer == 2) {
+            require(player[idx].playTime != 0);
+            require(block.timestamp - player[idx].playTime > waitingTime);
+            require(player[opponent].playTime == 0);
+            address payable account = payable(player[idx].addr);
+            account.transfer(reward);
+            reset();
+        }
+    }
+
+    function reset() private {
+        numPlayer = 0;
+        reward = 0;
+        numInput = 0;
+        delete player[0];
+        delete player[1];
     }
 }
