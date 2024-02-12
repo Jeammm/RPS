@@ -37,7 +37,7 @@ contract RWAPSSF is CommitReveal{
         //hash input with salt and then commit
         require(numPlayer == 2);
         require(msg.sender == player[idx].addr);
-        require(choice == 0 || choice == 1 || choice == 2 || choice == 3 || choice == 4 || choice == 5 || choice == 6 || choice == 7);
+        require(choice >= 0 && choice <= 6); // 0 <= choice <= 6
         
         bytes32 saltHash = keccak256(abi.encodePacked(salt));
         commit(getSaltedHash(bytes32(choice), saltHash));
@@ -87,7 +87,7 @@ contract RWAPSSF is CommitReveal{
         require(msg.sender == player[idx].addr);
 
         if (numPlayer == 1) {
-            //no one join the game in time
+            //no one join the game
             require(block.timestamp - player[idx].joinTime > waitingTime);
             address payable account = payable(player[idx].addr);
             account.transfer(reward);
@@ -103,7 +103,7 @@ contract RWAPSSF is CommitReveal{
 
         if (numPlayer == 2) {
             if (numInput == 2) {
-                //opponent not reveal his answer in time
+                //opponent not reveal his answer
                 require(player[idx].revealTime > waitingTime);
                 require(player[opponent].choice == 7);
                 address payable account = payable(player[idx].addr);
@@ -111,7 +111,7 @@ contract RWAPSSF is CommitReveal{
                 reset();
 
             } else {
-                //opponent not pick a choice in time
+                //opponent not pick a choice
                 require(player[idx].playTime != 0);
                 require(block.timestamp - player[idx].playTime > waitingTime);
                 require(player[opponent].playTime == 0);
