@@ -133,5 +133,7 @@ contract RWAPSSF is CommitReveal{
         numReveal = 0;
         delete player[0];
         delete player[1];
+        delete playerId[player[0].addr];
+        delete playerId[player[1].addr];
     }
 }
